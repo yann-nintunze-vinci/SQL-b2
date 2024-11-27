@@ -221,8 +221,7 @@ DECLARE
 BEGIN
     SELECT COUNT(num_reservation)
     INTO _num_reservation
-    FROM gestion_evenements.reservations
-    WHERE client = _client;
+    FROM gestion_evenements.reservations;
     _num_reservation := _num_reservation + 1;
     INSERT INTO gestion_evenements.reservations(num_reservation, nb_tickets, date_evenement, salle, client)
     VALUES (_num_reservation, _nb_tickets, _date_evenement, _salle, _client);
@@ -288,7 +287,8 @@ DECLARE
     _evenement RECORD;
 BEGIN
     FOR _evenement IN
-        SELECT ev.date_evenement, ev.salle FROM gestion_evenements.evenements ev
+        SELECT ev.date_evenement, ev.salle
+        FROM gestion_evenements.evenements ev
         WHERE ev.festival = _festival
         LOOP
             PERFORM gestion_evenements.ajouter_reservation(_nb_tickets, _evenement.date_evenement, _evenement.salle,
@@ -307,34 +307,110 @@ GROUP BY fe.id_festival
 HAVING CURRENT_DATE < MAX(ev.date_evenement)
 ORDER BY 2;
 
-CREATE OR REPLACE VIEW gestion_evenements.reservations_clients (nom_evenement, date_evenement, salle, num_reservation, client, nb_places_reservees)
+CREATE OR REPLACE VIEW gestion_evenements.reservations_clients
+            (nom_evenement, date_evenement, salle, num_reservation, client, nb_places_reservees)
 AS
-SELECT ev.nom, ev.date_evenement, ev.salle, re.num_reservation, re.client, re.nb_tickets
+SELECT ev.nom, ev.date_evenement, sa.nom, re.num_reservation, re.client, re.nb_tickets
 FROM gestion_evenements.reservations re,
-     gestion_evenements.evenements ev
+     gestion_evenements.evenements ev,
+     gestion_evenements.salles sa
 WHERE re.date_evenement = ev.date_evenement
   AND re.salle = ev.salle
+  AND sa.id_salle = ev.salle
 ORDER BY 2;
 
-SELECT gestion_evenements.ajouter_salle('forest national', 'forest', 5000);
+CREATE OR REPLACE FUNCTION gestion_evenements.artistes_par_evenement(_date_evenement DATE, _salle INTEGER)
+    RETURNS VARCHAR AS
+$$
+DECLARE
+    concerts RECORD;
+    artistes VARCHAR;
+BEGIN
+    FOR concerts IN
+        SELECT a.nom
+        FROM gestion_evenements.concerts co,
+             gestion_evenements.artistes a
+        WHERE co.date_evenement = _date_evenement
+          AND co.salle = _salle
+          AND co.artiste = a.id_artiste
+        LOOP
+            artistes := CONCAT_WS(' + ', artistes, concerts.nom);
+        END LOOP;
+    RETURN artistes;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE VIEW gestion_evenements.evenements_par_salle
+            (nom_evenement, date_evenement, id_salle, nom_salle, artistes, prix, est_complet)
+AS
+SELECT DISTINCT ev.nom,
+                ev.date_evenement,
+                ev.salle,
+                sa.nom,
+                gestion_evenements.artistes_par_evenement(ev.date_evenement, ev.salle),
+                ev.prix,
+                ev.nb_places_restantes = 0
+FROM gestion_evenements.salles sa,
+     gestion_evenements.evenements ev,
+     gestion_evenements.concerts co
+WHERE sa.id_salle = ev.salle
+  AND co.date_evenement = ev.date_evenement
+  AND co.salle = ev.salle
+ORDER BY 2;
+
+CREATE OR REPLACE VIEW gestion_evenements.evenements_par_artiste
+            (nom_evenement, date_evenement, salle, id_artiste,
+             artistes, prix, est_complet)
+AS
+SELECT ev.nom,
+       ev.date_evenement,
+       sa.nom,
+       co.artiste,
+       gestion_evenements.artistes_par_evenement(ev.date_evenement, ev.salle),
+       ev.prix,
+       ev.nb_places_restantes = 0
+FROM gestion_evenements.evenements ev,
+     gestion_evenements.concerts co,
+     gestion_evenements.salles sa
+WHERE co.salle = ev.salle
+  AND co.date_evenement = ev.date_evenement
+  AND sa.id_salle = ev.salle
+ORDER BY 2;
+
+SELECT gestion_evenements.ajouter_salle('forest national', 'forest', 10);
 SELECT gestion_evenements.ajouter_salle('ancienne belgique', 'bruxelles', 5000);
 SELECT gestion_evenements.ajouter_festival('rolling loud');
 SELECT gestion_evenements.ajouter_festival('coachella');
 SELECT gestion_evenements.ajouter_festival('kumalala');
-SELECT gestion_evenements.ajouter_artiste('playboi carti', 'USA');
-SELECT gestion_evenements.ajouter_artiste('destroy lonely', 'USA');
-SELECT gestion_evenements.ajouter_client('username565700', 'test@gmail.com', 'az12QaZ2eZ');
+SELECT gestion_evenements.ajouter_artiste('osamason', 'USA');
+SELECT gestion_evenements.ajouter_artiste('1oneam', 'USA');
+SELECT gestion_evenements.ajouter_artiste('ohsxnta', 'USA');
+SELECT gestion_evenements.ajouter_client('username1', 'test1@gmail.com', 'az12QaZ2eZ');
+SELECT gestion_evenements.ajouter_client('username2', 'test2@gmail.com', 'az12QaZ2eZ1');
+SELECT gestion_evenements.ajouter_client('username3', 'test3@gmail.com', 'az12QaZ2eZ3');
 
 SELECT gestion_evenements.ajouter_evenement('2025-01-01', 'narcissist', (12.5)::MONEY, 50, 1, 1);
 SELECT gestion_evenements.ajouter_evenement('2025-01-02', 'narcissist 2.0', (12.5)::MONEY, 50, 1, 1);
-SELECT gestion_evenements.ajouter_evenement('2025-01-03', 'autre evenmt', (16.5)::MONEY, 5000, 1, 2);
+SELECT gestion_evenements.ajouter_evenement('2025-01-03', 'autre evenmt', (16.5)::MONEY, 5000, 2, 2);
 
-SELECT gestion_evenements.ajouter_concert('00:00', 2, '2025-01-02', 1);
 SELECT gestion_evenements.ajouter_concert('00:00', 1, '2025-01-01', 1);
-SELECT gestion_evenements.ajouter_concert('00:00', 1, '2025-01-03', 1);
+SELECT gestion_evenements.ajouter_concert('01:00', 2, '2025-01-01', 1);
+SELECT gestion_evenements.ajouter_concert('02:00', 3, '2025-01-01', 1);
+SELECT gestion_evenements.ajouter_concert('00:00', 1, '2025-01-03', 2);
+SELECT gestion_evenements.ajouter_concert('01:00', 2, '2025-01-03', 2);
 
-SELECT gestion_evenements.ajouter_reservation(4, '2025-01-03', 1, 1);
+SELECT gestion_evenements.ajouter_reservation(2, '2025-01-01', 1, 1);
+SELECT gestion_evenements.ajouter_reservation(4, '2025-01-01', 1, 2);
+SELECT gestion_evenements.ajouter_reservation(4, '2025-01-01', 1, 3);
 
-SELECT gestion_evenements.ajouter_reservation_festival(4, 1, 1);
+--SELECT gestion_evenements.ajouter_reservation_festival(4, 1, 1);
+
+SELECT *
+FROM gestion_evenements.evenements_par_salle es
+WHERE es.id_salle = 1;
+
+SELECT *
+FROM gestion_evenements.evenements_par_artiste ea
+WHERE ea.id_artiste = 2;
 
 
