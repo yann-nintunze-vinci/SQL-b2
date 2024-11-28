@@ -341,7 +341,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE VIEW gestion_evenements.evenements_par_salle
-            (nom_evenement, date_evenement, id_salle, nom_salle, artistes, prix, est_complet)
+            (nom_evenement, date_evenement, salle, nom_salle, artistes, prix, est_complet)
 AS
 SELECT DISTINCT ev.nom,
                 ev.date_evenement,
@@ -359,7 +359,7 @@ WHERE sa.id_salle = ev.salle
 ORDER BY 2;
 
 CREATE OR REPLACE VIEW gestion_evenements.evenements_par_artiste
-            (nom_evenement, date_evenement, salle, id_artiste,
+            (nom_evenement, date_evenement, salle, artiste,
              artistes, prix, est_complet)
 AS
 SELECT ev.nom,
@@ -404,13 +404,4 @@ SELECT gestion_evenements.ajouter_reservation(4, '2025-01-01', 1, 2);
 SELECT gestion_evenements.ajouter_reservation(4, '2025-01-01', 1, 3);
 
 --SELECT gestion_evenements.ajouter_reservation_festival(4, 1, 1);
-
-SELECT *
-FROM gestion_evenements.evenements_par_salle es
-WHERE es.id_salle = 1;
-
-SELECT *
-FROM gestion_evenements.evenements_par_artiste ea
-WHERE ea.id_artiste = 2;
-
 
