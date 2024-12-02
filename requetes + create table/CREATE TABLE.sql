@@ -319,62 +319,42 @@ WHERE re.date_evenement = ev.date_evenement
   AND sa.id_salle = ev.salle
 ORDER BY 2;
 
-CREATE OR REPLACE FUNCTION gestion_evenements.artistes_par_evenement(_date_evenement DATE, _salle INTEGER)
-    RETURNS VARCHAR AS
-$$
-DECLARE
-    concerts RECORD;
-    artistes VARCHAR;
-BEGIN
-    FOR concerts IN
-        SELECT a.nom
-        FROM gestion_evenements.concerts co,
-             gestion_evenements.artistes a
-        WHERE co.date_evenement = _date_evenement
-          AND co.salle = _salle
-          AND co.artiste = a.id_artiste
-        LOOP
-            artistes := CONCAT_WS(' + ', artistes, concerts.nom);
-        END LOOP;
-    RETURN artistes;
-END;
-$$ LANGUAGE plpgsql;
-
 CREATE OR REPLACE VIEW gestion_evenements.evenements_par_salle
             (nom_evenement, date_evenement, salle, nom_salle, artistes, prix, est_complet)
 AS
-SELECT DISTINCT ev.nom,
-                ev.date_evenement,
-                ev.salle,
-                sa.nom,
-                gestion_evenements.artistes_par_evenement(ev.date_evenement, ev.salle),
-                ev.prix,
-                ev.nb_places_restantes = 0
+SELECT ev.nom,
+       ev.date_evenement,
+       sa.id_salle,
+       sa.nom,
+       string_agg(a.nom, '+'),
+       ev.prix,
+       ev.nb_places_restantes = 0
 FROM gestion_evenements.salles sa,
-     gestion_evenements.evenements ev,
-     gestion_evenements.concerts co
-WHERE sa.id_salle = ev.salle
-  AND co.date_evenement = ev.date_evenement
-  AND co.salle = ev.salle
+     gestion_evenements.evenements ev
+         LEFT OUTER JOIN gestion_evenements.concerts co ON ev.salle = co.salle and ev.date_evenement = co.date_evenement
+         LEFT OUTER JOIN gestion_evenements.artistes a ON co.artiste = a.id_artiste
+         AND a.id_artiste = co.artiste
+WHERE ev.salle = sa.id_salle
+GROUP BY ev.nom, ev.date_evenement, sa.id_salle, sa.nom, ev.prix, ev.nb_places_restantes
 ORDER BY 2;
 
 CREATE OR REPLACE VIEW gestion_evenements.evenements_par_artiste
-            (nom_evenement, date_evenement, salle, artiste,
+            (nom_evenement, date_evenement, nom_salle, artiste,
              artistes, prix, est_complet)
 AS
 SELECT ev.nom,
        ev.date_evenement,
        sa.nom,
-       co.artiste,
-       gestion_evenements.artistes_par_evenement(ev.date_evenement, ev.salle),
+       a.id_artiste,
+       string_agg(a.nom, '+'),
        ev.prix,
        ev.nb_places_restantes = 0
-FROM gestion_evenements.evenements ev,
-     gestion_evenements.concerts co,
-     gestion_evenements.salles sa
-WHERE co.salle = ev.salle
-  AND co.date_evenement = ev.date_evenement
-  AND sa.id_salle = ev.salle
+FROM gestion_evenements.salles sa,
+     gestion_evenements.evenements ev
+LEFT OUTER JOIN gestion_evenements.concerts co ON ev.salle = co.salle AND ev.date_evenement = co.salle
+LEFT OUTER JOIN gestion_evenements.artistes a ON co.artiste = a.id_artiste
+WHERE sa.id_salle = ev.salle
+GROUP BY ev.nom, ev.date_evenement, sa.nom, a.id_artiste, ev.prix, ev.nb_places_restantes
 ORDER BY 2;
 
 SELECT gestion_evenements.ajouter_salle('forest national', 'forest', 10);
