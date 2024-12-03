@@ -351,7 +351,7 @@ SELECT ev.nom,
        ev.nb_places_restantes = 0
 FROM gestion_evenements.salles sa,
      gestion_evenements.evenements ev
-LEFT OUTER JOIN gestion_evenements.concerts co ON ev.salle = co.salle AND ev.date_evenement = co.salle
+LEFT OUTER JOIN gestion_evenements.concerts co ON ev.salle = co.salle AND ev.date_evenement = co.date_evenement
 LEFT OUTER JOIN gestion_evenements.artistes a ON co.artiste = a.id_artiste
 WHERE sa.id_salle = ev.salle
 GROUP BY ev.nom, ev.date_evenement, sa.nom, a.id_artiste, ev.prix, ev.nb_places_restantes
@@ -365,23 +365,14 @@ SELECT gestion_evenements.ajouter_festival('kumalala');
 SELECT gestion_evenements.ajouter_artiste('osamason', 'USA');
 SELECT gestion_evenements.ajouter_artiste('1oneam', 'USA');
 SELECT gestion_evenements.ajouter_artiste('ohsxnta', 'USA');
-SELECT gestion_evenements.ajouter_client('username1', 'test1@gmail.com', 'az12QaZ2eZ');
-SELECT gestion_evenements.ajouter_client('username2', 'test2@gmail.com', 'az12QaZ2eZ1');
-SELECT gestion_evenements.ajouter_client('username3', 'test3@gmail.com', 'az12QaZ2eZ3');
 
 SELECT gestion_evenements.ajouter_evenement('2025-01-01', 'narcissist', (12.5)::MONEY, 50, 1, 1);
-SELECT gestion_evenements.ajouter_evenement('2025-01-02', 'narcissist 2.0', (12.5)::MONEY, 50, 1, 1);
+SELECT gestion_evenements.ajouter_evenement('2025-01-02', 'narcissist 2.0', (12.5)::MONEY, 50, 1, 3);
 SELECT gestion_evenements.ajouter_evenement('2025-01-03', 'autre evenmt', (16.5)::MONEY, 5000, 2, 2);
 
 SELECT gestion_evenements.ajouter_concert('00:00', 1, '2025-01-01', 1);
 SELECT gestion_evenements.ajouter_concert('01:00', 2, '2025-01-01', 1);
 SELECT gestion_evenements.ajouter_concert('02:00', 3, '2025-01-01', 1);
+SELECT gestion_evenements.ajouter_concert('02:00', 3, '2025-01-02', 1);
 SELECT gestion_evenements.ajouter_concert('00:00', 1, '2025-01-03', 2);
 SELECT gestion_evenements.ajouter_concert('01:00', 2, '2025-01-03', 2);
-
-SELECT gestion_evenements.ajouter_reservation(2, '2025-01-01', 1, 1);
-SELECT gestion_evenements.ajouter_reservation(4, '2025-01-01', 1, 2);
-SELECT gestion_evenements.ajouter_reservation(4, '2025-01-01', 1, 3);
-
---SELECT gestion_evenements.ajouter_reservation_festival(4, 1, 1);
-

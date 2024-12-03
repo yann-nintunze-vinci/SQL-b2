@@ -5,28 +5,46 @@ public class Main {
     public static void main(String[] args) {
         System.out.println("test");
         InterfaceClient ic = new InterfaceClient();
+        Scanner scanner = new Scanner(System.in);
+        boolean connecte = false;
 
-        System.out.println("festivals futurs:");
-        ic.afficherFestivalsFuturs();
-        System.out.println();
+        do {
+            int choix;
+            do {
+                System.out.println("\n1. s'incrire");
+                System.out.println("2. se connecter");
+                choix = scanner.nextInt();
+            } while (choix < 1 || choix > 2);
 
-        System.out.println("reservations client:");
-        System.out.print("Ecrivez l'id d'un client : ");
-        Scanner s = new Scanner(System.in);
-        ic.afficherReservationsClient(s.nextInt());
-        System.out.println();
+            connecte = switch (choix) {
+                case 1 -> ic.sInscrire();
+                case 2 -> ic.seConnecter();
+                default -> connecte;
+            };
+        } while (!connecte);
 
+        System.out.println("Bienvenue sur l'interface !\n");
 
-        System.out.println("evenements par salle");
-        System.out.print("Ecrivez l'id d'une salle : ");
-        ic.afficherEvenementsParSalle(s.nextInt());
-        System.out.println();
+        while (true) {
+            int choix;
+            do {
+                System.out.println("\n1. Voir les événements d’une salle particulière triés par date");
+                System.out.println("2. Voir ses réservations");
+                System.out.println("3. Voir les festivals futurs");
+                System.out.println("4. Voir les événements auxquels participe un artiste particulier triés par date");
+                choix = scanner.nextInt();
+            } while (choix < 1 || choix > 4);
 
-        System.out.println("evenements par artiste");
-        System.out.print("Ecrivez l'id d'un artiste : ");
-        ic.afficherEvenementsParArtiste(s.nextInt());
-        System.out.println();
-
-
+            switch (choix) {
+                case 1: ic.afficherEvenementsParSalle();
+                    break;
+                case 2:
+                    break;
+                case 3:
+                    break;
+                case 4:
+                    break;
+            }
+        }
     }
 }
