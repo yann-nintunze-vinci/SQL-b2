@@ -3,7 +3,6 @@ import java.util.Scanner;
 public class Main {
 
     public static void main(String[] args) {
-        System.out.println("test");
         InterfaceClient ic = new InterfaceClient();
         Scanner scanner = new Scanner(System.in);
         boolean connecte = false;
@@ -38,11 +37,11 @@ public class Main {
             switch (choix) {
                 case 1: ic.afficherEvenementsParSalle();
                     break;
-                case 2:
+                case 2: ic.afficherReservations();
                     break;
-                case 3:
+                case 3: ic.afficherFestivalsFuturs();
                     break;
-                case 4:
+                case 4: ic.afficherEvenementsParArtiste();
                     break;
             }
         }

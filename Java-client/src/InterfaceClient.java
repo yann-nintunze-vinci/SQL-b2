@@ -74,6 +74,8 @@ public class InterfaceClient {
 
             if (rs.next()) {
                 this.client = rs.getInt(1);
+                System.out.println("se connecter : ");
+                return seConnecter();
             }
 
         } catch (SQLException e) {
@@ -81,7 +83,8 @@ public class InterfaceClient {
             e.printStackTrace();
             System.exit(1);
         }
-        return true;
+        System.out.println("Une erreur s'est produite");
+        return false;
     }
 
     public boolean seConnecter() {
@@ -122,22 +125,7 @@ public class InterfaceClient {
 
     private void afficherLesSalles() {
         System.out.println("Voici toutes les salles");
-        try {
-            Statement s = conn.createStatement();
-            try (ResultSet rs = s.executeQuery("SELECT id_salle, nom, ville, capacite FROM gestion_evenements.salles")) {
-                ResultSetMetaData rsmd = rs.getMetaData();
-                int columnCount = rsmd.getColumnCount();
-                while (rs.next()) {
-                    for (int i = 1; i < columnCount; i++)
-                        System.out.print(rs.getString(i) + " ");
-                    System.out.println();
-                }
-            }
-        } catch (SQLException e) {
-            System.out.println("Erreur lors du select !");
-            e.printStackTrace();
-            System.exit(1);
-        }
+        afficherQuery("SELECT id_salle, nom, ville, capacite FROM gestion_evenements.salles");
     }
 
     public void afficherEvenementsParSalle() {
@@ -150,11 +138,11 @@ public class InterfaceClient {
             ps.setInt(1, id_salle);
             ResultSet rs = ps.executeQuery();
             ResultSetMetaData rsmd = rs.getMetaData();
-
+            int columnCount = rsmd.getColumnCount();
             List<Date> listeDates = new ArrayList<>();
             while (rs.next()) {
                 System.out.print(rs.getRow() + ". ");
-                for (int i = 1; i < rsmd.getColumnCount(); i++) {
+                for (int i = 1; i < columnCount; i++) {
                     if (i == 2) {
                         Date date = rs.getDate(i);
                         listeDates.add(date);
@@ -189,6 +177,64 @@ public class InterfaceClient {
             if (rs2.next())
                 System.out.println("Reservation accomplie");
 
+        } catch (SQLException e) {
+            System.out.println("Erreur lors du select !");
+            e.printStackTrace();
+            System.exit(1);
+        }
+    }
+
+    public void afficherReservations() {
+        afficherQuery("SELECT nom_evenement, date_evenement, salle, num_reservation, nb_places_reservees FROM gestion_evenements.reservations_clients WHERE client = ?;", this.client);
+    }
+
+    public void afficherFestivalsFuturs() {
+        afficherQuery("SELECT nom, date_1er_evenement, date_dernier_evenement, total_prix FROM gestion_evenements.festivals_futurs;");
+    }
+
+    private void afficherLesArtistes() {
+        System.out.println("Voici tous les artistes");
+        afficherQuery("SELECT id_artiste, nom, nationalite FROM gestion_evenements.artistes;");
+    }
+
+    public void afficherEvenementsParArtiste() {
+        afficherLesArtistes();
+        System.out.println("Donnez l'id de l'artiste dont vous voulez voir les evenements : ");
+        int id_artiste = scanner.nextInt();
+        afficherQuery("SELECT nom_evenement, date_evenement, nom_salle, artistes, prix, est_complet FROM gestion_evenements.evenements_par_artiste WHERE artiste = ?;", id_artiste);
+    }
+
+    private void afficherQuery(String query) {
+        try {
+            Statement s = conn.createStatement();
+            try (ResultSet rs = s.executeQuery(query)) {
+                ResultSetMetaData rsmd = rs.getMetaData();
+                int columnCount = rsmd.getColumnCount();
+                while (rs.next()) {
+                    for (int i = 1; i < columnCount; i++)
+                        System.out.print(rs.getString(i) + " ");
+                    System.out.println();
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Erreur lors du select !");
+            e.printStackTrace();
+            System.exit(1);
+        }
+    }
+
+    private void afficherQuery(String query, int id) {
+        try {
+            PreparedStatement ps = conn.prepareStatement(query);
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+            ResultSetMetaData rsmd = rs.getMetaData();
+            int columnCount = rsmd.getColumnCount();
+            while (rs.next()) {
+                for (int i = 1; i < columnCount; i++)
+                    System.out.print(rs.getString(i) + " ");
+                System.out.println();
+            }
         } catch (SQLException e) {
             System.out.println("Erreur lors du select !");
             e.printStackTrace();
